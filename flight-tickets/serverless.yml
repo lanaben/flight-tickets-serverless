@@ -1,0 +1,81 @@
+service: flight-tickets
+
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    TICKET_TABLE: flight-tickets
+    UPLOAD_BUCKET: flight-tickets-uploads
+
+plugins:
+  - serverless-offline
+  - serverless-localstack
+
+custom:
+  localstack:
+    stages:
+      - local
+
+functions:
+  createTicket:
+    handler: handler.createTicket
+    events:
+      - http:
+          path: /tickets
+          method: post
+          cors: true
+
+  getTickets:
+    handler: handler.getTickets
+    events:
+      - http:
+          path: /tickets
+          method: get
+          cors: true
+
+  getTicketById:
+    handler: handler.getTicketById
+    events:
+      - http:
+          path: /tickets/{id}
+          method: get
+          cors: true
+
+  updateTicket:
+    handler: handler.updateTicket
+    events:
+      - http:
+          path: /tickets/{id}
+          method: put
+          cors: true
+
+  deleteTicket:
+    handler: handler.deleteTicket
+    events:
+      - http:
+          path: /tickets/{id}
+          method: delete
+          cors: true
+
+resources:
+  Resources:
+    EventsDynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TICKET_TABLE}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+  UploadsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ${self:provider.environment.UPLOAD_BUCKET}
